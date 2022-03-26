@@ -19,12 +19,13 @@ with open("dictionary.txt", 'r',encoding='utf8') as dict_file:
 """
 
 hsk5_word_list = []
+hsk5_file_map = {}
 with open("HSK5_freqorder.txt", 'r',encoding='utf8') as csvfile:
     freader = csv.reader(csvfile, delimiter='\t')
     for row in freader:
         simplified_character = row[0]
         hsk5_word_list.append(simplified_character)
-
+        hsk5_file_map[simplified_character] = {'pinyin':row[3], 'meaning':row[4]}
 
 word_to_neighbours_dict = defaultdict(list)
 for word in hsk5_word_list:
@@ -79,21 +80,32 @@ for source in word_to_neighbours_dict.keys():
 node_to_id_map = {}
 node_counter = 1
 with open("nodes.csv", 'w',encoding='utf8') as out_nodes_file:
-    out_nodes_file.write('id,name\n')
+    out_nodes_file.write('id|name|pinyin|meaning\n')
     for node in node_set:
-        out_nodes_file.write(str(node_counter)+","+node+'\n')
+        meaning = ""
+        pinyin = ""
+        if node in hsk5_file_map.keys():
+            pinyin = hsk5_file_map[node]["pinyin"]
+            if hsk5_file_map[node]["meaning"]:
+                meaning = hsk5_file_map[node]["meaning"]
+        else:
+            if len(dict_map[node]["pinyin"])>0:
+                pinyin = dict_map[node]["pinyin"][0]
+            if 'definition' in dict_map[node].keys():
+                meaning = dict_map[node]["definition"]
+        out_nodes_file.write(str(node_counter)+"|"+node+"|"+pinyin+"|"+meaning+'\n')
         node_to_id_map[node] = node_counter
         node_counter = node_counter + 1
 
 with open("edges.csv", 'w',encoding='utf8') as out_relationships_file:
-    out_relationships_file.write('source_id,target_id\n')
+    out_relationships_file.write('source_id|target_id\n')
     for relationship in relationship_set:
         source = relationship[0]
         dest = relationship[1]
         if source != dest:
             source_id = node_to_id_map[source]
             dest_id = node_to_id_map[dest]
-            out_relationships_file.write(str(dest_id)+","+str(source_id)+'\n')
+            out_relationships_file.write(str(dest_id)+"|"+str(source_id)+'\n')
         
 """
 word_to_index_map = {}
